@@ -1,0 +1,5 @@
+<resources>
+    <!-- UserListActivity -->
+    <string name="user_list_empty_error">No user available</string>
+    <string name="generic_error">An error occurred</string>
+</resources>
