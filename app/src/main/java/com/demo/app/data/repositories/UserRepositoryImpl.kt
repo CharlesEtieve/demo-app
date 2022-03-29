@@ -6,7 +6,7 @@ import com.demo.app.data.vendors.network.api.UserApi
 import com.demo.app.domain.models.DomainUserPage
 import com.demo.app.domain.repositories.UserRepository
 import com.eurosportdemo.app.BuildConfig
-import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Single
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
@@ -14,7 +14,7 @@ class UserRepositoryImpl @Inject constructor(
     private val userDao: UserDao
 ) : UserRepository {
 
-    override fun getUserPage(page: Int): Observable<DomainUserPage> =
+    override fun getUserPage(page: Int): Single<DomainUserPage> =
         userApi.getUserPage(
             seed = BuildConfig.SEED,
             results = BuildConfig.RESULT,
@@ -26,14 +26,13 @@ class UserRepositoryImpl @Inject constructor(
                     canRefresh = true
                 )
             }
-            .doOnSuccess { userPage ->
+            .flatMap { userPage ->
                 userDao.insertUsers(
                     userPage.userList.map { user ->
                         user.toEntity()
                     }
-                )
+                ).toSingle { userPage }
             }
-            .toObservable()
             .onErrorResumeNext {
                 userDao.getAllUser()
                     .map { userList ->
@@ -45,6 +44,6 @@ class UserRepositoryImpl @Inject constructor(
                             userList = userList,
                             canRefresh = false
                         )
-                    }
+                    }.firstOrError()
             }
 }

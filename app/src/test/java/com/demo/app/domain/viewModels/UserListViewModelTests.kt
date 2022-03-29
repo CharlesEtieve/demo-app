@@ -20,13 +20,12 @@ import org.mockito.junit.MockitoJUnitRunner
 @RunWith(MockitoJUnitRunner::class)
 class UserListViewModelTests {
     private val mockGetUserPageUseCase: GetUserPageUseCase = mock()
-    private val mockViewState: BehaviorSubject<UserListViewModel.ViewState> = mock()
     private val testNetworkSchedulers = TestMySchedulers()
-    private val viewModel = UserListViewModel(mockGetUserPageUseCase, testNetworkSchedulers, mockViewState)
+    private val viewModel = UserListViewModel(mockGetUserPageUseCase, testNetworkSchedulers)
 
     @After
     fun tearDown() {
-        verifyNoMoreInteractions(mockGetUserPageUseCase, mockViewState)
+        verifyNoMoreInteractions(mockGetUserPageUseCase)
     }
 
     @Test
@@ -39,7 +38,7 @@ class UserListViewModelTests {
         viewModel.setup()
 
         verify(mockGetUserPageUseCase).invoke()
-        verify(mockViewState).onNext(UserListViewModel.ViewState.ShowUserList(expectedUIUserItemList))
+        viewModel.viewState.test().assertValue(UserListViewModel.ViewState.ShowUserList(expectedUIUserItemList))
     }
 
     @Test
@@ -50,7 +49,7 @@ class UserListViewModelTests {
         viewModel.setup()
 
         verify(mockGetUserPageUseCase).invoke()
-        verify(mockViewState).onNext(UserListViewModel.ViewState.ShowErrorMessage(R.string.generic_error))
+        viewModel.viewState.test().assertValue(UserListViewModel.ViewState.ShowErrorMessage(R.string.generic_error))
     }
 
     @Test
@@ -63,7 +62,7 @@ class UserListViewModelTests {
         viewModel.loadMore()
 
         verify(mockGetUserPageUseCase).invoke()
-        verify(mockViewState).onNext(UserListViewModel.ViewState.ShowUserList(expectedUIUserItemList))
+        viewModel.viewState.test().assertValue(UserListViewModel.ViewState.ShowUserList(expectedUIUserItemList))
     }
 
     @Test
@@ -74,7 +73,7 @@ class UserListViewModelTests {
         viewModel.loadMore()
 
         verify(mockGetUserPageUseCase).invoke()
-        verify(mockViewState).onNext(UserListViewModel.ViewState.ShowErrorMessage(R.string.generic_error))
+        viewModel.viewState.test().assertValue(UserListViewModel.ViewState.ShowErrorMessage(R.string.generic_error))
     }
 
     @Test
@@ -87,7 +86,7 @@ class UserListViewModelTests {
         viewModel.refresh()
 
         verify(mockGetUserPageUseCase).invoke(true)
-        verify(mockViewState).onNext(UserListViewModel.ViewState.ShowUserList(expectedUIUserItemList))
+        viewModel.viewState.test().assertValue(UserListViewModel.ViewState.ShowUserList(expectedUIUserItemList))
     }
 
     @Test
@@ -98,7 +97,7 @@ class UserListViewModelTests {
         viewModel.refresh()
 
         verify(mockGetUserPageUseCase).invoke(true)
-        verify(mockViewState).onNext(UserListViewModel.ViewState.ShowErrorMessage(R.string.generic_error))
+        viewModel.viewState.test().assertValue(UserListViewModel.ViewState.ShowErrorMessage(R.string.generic_error))
     }
 
     private fun getUIUserItemList(userPageList: List<DomainUserPage>): List<UIUserItem> =

@@ -14,9 +14,10 @@ import javax.inject.Inject
 @HiltViewModel
 class UserListViewModel @Inject constructor(
     private val getUserPage: GetUserPageUseCase,
-    private val mySchedulers: MySchedulers,
-    val viewState: BehaviorSubject<ViewState>
+    private val mySchedulers: MySchedulers
 ) : BaseViewModel() {
+
+    val viewState: BehaviorSubject<ViewState> = BehaviorSubject.create()
 
     sealed class ViewState {
         data class ShowUserList(val userList: List<UIUserItem>) : ViewState()

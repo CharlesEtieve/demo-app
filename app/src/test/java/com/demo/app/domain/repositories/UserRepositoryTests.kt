@@ -9,6 +9,7 @@ import com.demo.app.data.vendors.network.api.UserApi
 import com.demo.app.domain.models.DomainUserPage
 import com.eurosportdemo.app.BuildConfig
 import com.nhaarman.mockitokotlin2.*
+import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.core.Single
 import org.junit.After
@@ -39,6 +40,7 @@ class UserRepositoryTests {
             user.toEntity()
         }
         whenever(mockUserApi.getUserPage(any(), any(), any())).thenReturn(Single.just(expectedUserPage))
+        whenever(mockUserDao.insertUsers(any())).thenReturn(Completable.complete())
 
         userRepository.getUserPage(expectedPage)
             .test()

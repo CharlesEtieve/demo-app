@@ -7,8 +7,7 @@ import com.demo.app.domain.useCase.GetUserPageUseCase
 import com.nhaarman.mockitokotlin2.*
 import org.junit.After
 import org.junit.Test
-import io.reactivex.rxjava3.core.Observable
-import org.junit.Before
+import io.reactivex.rxjava3.core.Single
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
 
@@ -27,7 +26,7 @@ class GetUserPageUseCaseTests {
         val expectedPage = 1
         val expectedUserPage = DomainFixtures.DomainUserPageUtils.create()
         val expectedUserPageList = listOf(expectedUserPage)
-        whenever(mockUserRepository.getUserPage(any())).thenReturn(Observable.just(expectedUserPage))
+        whenever(mockUserRepository.getUserPage(any())).thenReturn(Single.just(expectedUserPage))
 
         useCase.invoke()
             .test()
@@ -40,7 +39,7 @@ class GetUserPageUseCaseTests {
     fun testInvokeFailure() {
         val expectedPage = 1
         val expectedDomainException = DomainExceptionsFixtures.DomainNetworkUtils.createInternalError("error")
-        whenever(mockUserRepository.getUserPage(any())).thenReturn(Observable.error(expectedDomainException))
+        whenever(mockUserRepository.getUserPage(any())).thenReturn(Single.error(expectedDomainException))
 
         useCase.invoke()
             .test()
@@ -54,7 +53,7 @@ class GetUserPageUseCaseTests {
         val expectedUserPage = DomainFixtures.DomainUserPageUtils.create()
         val expectedUserPageList1 = listOf(expectedUserPage)
         val expectedUserPageList2 = listOf(expectedUserPage, expectedUserPage)
-        whenever(mockUserRepository.getUserPage(any())).thenReturn(Observable.just(expectedUserPage))
+        whenever(mockUserRepository.getUserPage(any())).thenReturn(Single.just(expectedUserPage))
 
         useCase.invoke()
             .test()
@@ -73,7 +72,7 @@ class GetUserPageUseCaseTests {
         val expectedPage = 1
         val expectedUserPage = DomainFixtures.DomainUserPageUtils.create()
         val expectedUserPageList = listOf(expectedUserPage)
-        whenever(mockUserRepository.getUserPage(any())).thenReturn(Observable.just(expectedUserPage))
+        whenever(mockUserRepository.getUserPage(any())).thenReturn(Single.just(expectedUserPage))
 
         useCase.invoke(refresh = true)
             .test()
@@ -86,7 +85,7 @@ class GetUserPageUseCaseTests {
     fun testTwoInvokeWithRefreshSuccess() {
         val expectedUserPage = DomainFixtures.DomainUserPageUtils.create()
         val expectedUserPageList1 = listOf(expectedUserPage)
-        whenever(mockUserRepository.getUserPage(any())).thenReturn(Observable.just(expectedUserPage))
+        whenever(mockUserRepository.getUserPage(any())).thenReturn(Single.just(expectedUserPage))
 
         useCase.invoke()
             .test()
@@ -103,7 +102,7 @@ class GetUserPageUseCaseTests {
     fun testInvokeWithRefreshFailure() {
         val expectedPage = 1
         val expectedDomainException = DomainExceptionsFixtures.DomainNetworkUtils.createInternalError("error")
-        whenever(mockUserRepository.getUserPage(any())).thenReturn(Observable.error(expectedDomainException))
+        whenever(mockUserRepository.getUserPage(any())).thenReturn(Single.error(expectedDomainException))
 
         useCase.invoke(refresh = true)
             .test()
