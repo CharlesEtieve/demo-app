@@ -11,7 +11,6 @@ import com.demo.app.presenter.viewModels.UserListViewModel
 import com.eurosportdemo.app.R
 import com.nhaarman.mockitokotlin2.*
 import io.reactivex.rxjava3.core.Observable
-import io.reactivex.rxjava3.subjects.BehaviorSubject
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,51 +28,35 @@ class UserListViewModelTests {
     }
 
     @Test
-    fun testSetupSuccess() {
+    fun testLoadSuccess() {
         val expectedUserPage = DomainFixtures.DomainUserPageUtils.create()
         val expectedUserPageList = listOf(expectedUserPage)
         val expectedUIUserItemList = getUIUserItemList(expectedUserPageList)
         whenever(mockGetUserPageUseCase.invoke(any())).thenReturn(Observable.just(expectedUserPageList))
 
-        viewModel.setup()
+        viewModel.getViewState(
+            load = Observable.just(Unit),
+            refresh = Observable.never()
+        )
+            .test()
+            .assertValue(UserListViewModel.ViewState.ShowUserList(expectedUIUserItemList))
 
-        verify(mockGetUserPageUseCase).invoke()
-        viewModel.viewState.test().assertValue(UserListViewModel.ViewState.ShowUserList(expectedUIUserItemList))
+        verify(mockGetUserPageUseCase).invoke(any())
     }
 
     @Test
-    fun testSetupFailure() {
+    fun testLoadFailure() {
         val expectedDomainException = DomainExceptionsFixtures.DomainNetworkUtils.createInternalError("error")
         whenever(mockGetUserPageUseCase.invoke(any())).thenReturn(Observable.error(expectedDomainException))
 
-        viewModel.setup()
+        viewModel.getViewState(
+            load = Observable.just(Unit),
+            refresh = Observable.never()
+        )
+            .test()
+            .assertValue(UserListViewModel.ViewState.ShowErrorMessage(R.string.generic_error))
 
-        verify(mockGetUserPageUseCase).invoke()
-        viewModel.viewState.test().assertValue(UserListViewModel.ViewState.ShowErrorMessage(R.string.generic_error))
-    }
-
-    @Test
-    fun testLoadMoreSuccess() {
-        val expectedUserPage = DomainFixtures.DomainUserPageUtils.create()
-        val expectedUserPageList = listOf(expectedUserPage)
-        val expectedUIUserItemList = getUIUserItemList(expectedUserPageList)
-        whenever(mockGetUserPageUseCase.invoke(any())).thenReturn(Observable.just(expectedUserPageList))
-
-        viewModel.loadMore()
-
-        verify(mockGetUserPageUseCase).invoke()
-        viewModel.viewState.test().assertValue(UserListViewModel.ViewState.ShowUserList(expectedUIUserItemList))
-    }
-
-    @Test
-    fun testLoadMoreFailure() {
-        val expectedDomainException = DomainExceptionsFixtures.DomainNetworkUtils.createInternalError("error")
-        whenever(mockGetUserPageUseCase.invoke(any())).thenReturn(Observable.error(expectedDomainException))
-
-        viewModel.loadMore()
-
-        verify(mockGetUserPageUseCase).invoke()
-        viewModel.viewState.test().assertValue(UserListViewModel.ViewState.ShowErrorMessage(R.string.generic_error))
+        verify(mockGetUserPageUseCase).invoke(any())
     }
 
     @Test
@@ -83,10 +66,15 @@ class UserListViewModelTests {
         val expectedUIUserItemList = getUIUserItemList(expectedUserPageList)
         whenever(mockGetUserPageUseCase.invoke(any())).thenReturn(Observable.just(expectedUserPageList))
 
-        viewModel.refresh()
+        viewModel.getViewState(
+            load = Observable.just(Unit),
+            refresh = Observable.just(Unit)
+        )
+            .test()
+            .assertValueAt(0, UserListViewModel.ViewState.ShowUserList(expectedUIUserItemList))
+            .assertValueAt(1, UserListViewModel.ViewState.ShowUserList(expectedUIUserItemList))
 
-        verify(mockGetUserPageUseCase).invoke(true)
-        viewModel.viewState.test().assertValue(UserListViewModel.ViewState.ShowUserList(expectedUIUserItemList))
+        verify(mockGetUserPageUseCase, times(2)).invoke(any())
     }
 
     @Test
@@ -94,10 +82,14 @@ class UserListViewModelTests {
         val expectedDomainException = DomainExceptionsFixtures.DomainNetworkUtils.createInternalError("error")
         whenever(mockGetUserPageUseCase.invoke(any())).thenReturn(Observable.error(expectedDomainException))
 
-        viewModel.refresh()
+        viewModel.getViewState(
+            load = Observable.just(Unit),
+            refresh = Observable.just(Unit)
+        )
+            .test()
+            .assertValue(UserListViewModel.ViewState.ShowErrorMessage(R.string.generic_error))
 
-        verify(mockGetUserPageUseCase).invoke(true)
-        viewModel.viewState.test().assertValue(UserListViewModel.ViewState.ShowErrorMessage(R.string.generic_error))
+        verify(mockGetUserPageUseCase).invoke(any())
     }
 
     private fun getUIUserItemList(userPageList: List<DomainUserPage>): List<UIUserItem> =

@@ -49,65 +49,42 @@ class GetUserPageUseCaseTests {
     }
 
     @Test
-    fun testTwoInvokeSuccess() {
-        val expectedUserPage = DomainFixtures.DomainUserPageUtils.create()
-        val expectedUserPageList1 = listOf(expectedUserPage)
-        val expectedUserPageList2 = listOf(expectedUserPage, expectedUserPage)
-        whenever(mockUserRepository.getUserPage(any())).thenReturn(Single.just(expectedUserPage))
-
-        useCase.invoke()
-            .test()
-            .assertValue(expectedUserPageList1)
-
-        useCase.invoke()
-            .test()
-            .assertValue(expectedUserPageList2)
-
-        verify(mockUserRepository).getUserPage(1)
-        verify(mockUserRepository).getUserPage(2)
-    }
-
-    @Test
-    fun testInvokeWithRefreshSuccess() {
+    fun testInvokeAndRefreshSuccess() {
         val expectedPage = 1
         val expectedUserPage = DomainFixtures.DomainUserPageUtils.create()
-        val expectedUserPageList = listOf(expectedUserPage)
-        whenever(mockUserRepository.getUserPage(any())).thenReturn(Single.just(expectedUserPage))
-
-        useCase.invoke(refresh = true)
-            .test()
-            .assertValue(expectedUserPageList)
-
-        verify(mockUserRepository).getUserPage(expectedPage)
-    }
-
-    @Test
-    fun testTwoInvokeWithRefreshSuccess() {
-        val expectedUserPage = DomainFixtures.DomainUserPageUtils.create()
-        val expectedUserPageList1 = listOf(expectedUserPage)
+        val expectedUserPageListLoad = listOf(expectedUserPage)
+        val expectedUserPageListRefresh = listOf(expectedUserPage)
         whenever(mockUserRepository.getUserPage(any())).thenReturn(Single.just(expectedUserPage))
 
         useCase.invoke()
             .test()
-            .assertValue(expectedUserPageList1)
+            .assertValue(expectedUserPageListLoad)
 
-        useCase.invoke(refresh = true)
+        useCase.invoke(
+            refresh = true
+        )
             .test()
-            .assertValue(expectedUserPageList1)
+            .assertValue(expectedUserPageListRefresh)
 
-        verify(mockUserRepository, times(2)).getUserPage(1)
+        verify(mockUserRepository, times(2)).getUserPage(expectedPage)
     }
 
     @Test
-    fun testInvokeWithRefreshFailure() {
+    fun testInvokeAndRefreshFailure() {
         val expectedPage = 1
         val expectedDomainException = DomainExceptionsFixtures.DomainNetworkUtils.createInternalError("error")
         whenever(mockUserRepository.getUserPage(any())).thenReturn(Single.error(expectedDomainException))
 
-        useCase.invoke(refresh = true)
+        useCase.invoke()
             .test()
             .assertError(expectedDomainException)
 
-        verify(mockUserRepository).getUserPage(expectedPage)
+        useCase.invoke(
+            refresh = true
+        )
+            .test()
+            .assertError(expectedDomainException)
+
+        verify(mockUserRepository, times(2)).getUserPage(expectedPage)
     }
 }

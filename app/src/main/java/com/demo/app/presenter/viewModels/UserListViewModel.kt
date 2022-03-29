@@ -1,23 +1,22 @@
 package com.demo.app.presenter.viewModels
 
 import androidx.annotation.StringRes
-import com.eurosportdemo.app.R
+import androidx.lifecycle.ViewModel
 import com.demo.app.domain.useCase.GetUserPageUseCase
 import com.demo.app.presenter.models.UIUserItem
 import com.demo.app.presenter.models.uiItemMapping.toUIItem
 import com.demo.app.presenter.util.MySchedulers
+import com.eurosportdemo.app.R
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.reactivex.rxjava3.kotlin.addTo
-import io.reactivex.rxjava3.subjects.BehaviorSubject
+import io.reactivex.rxjava3.core.BackpressureStrategy
+import io.reactivex.rxjava3.core.Observable
 import javax.inject.Inject
 
 @HiltViewModel
 class UserListViewModel @Inject constructor(
     private val getUserPage: GetUserPageUseCase,
     private val mySchedulers: MySchedulers
-) : BaseViewModel() {
-
-    val viewState: BehaviorSubject<ViewState> = BehaviorSubject.create()
+) : ViewModel() {
 
     sealed class ViewState {
         data class ShowUserList(val userList: List<UIUserItem>) : ViewState()
@@ -25,46 +24,33 @@ class UserListViewModel @Inject constructor(
         data class ShowErrorMessage(@StringRes val message: Int) : ViewState()
     }
 
-    fun setup() {
-        loadPage()
-    }
-
-    fun refresh() {
-        loadPage(true)
-    }
-
-    fun loadMore() {
-        loadPage()
-    }
-
-    fun itemClicked(user: UIUserItem) {
-        //not implemented yet
-    }
-
-    private fun loadPage(refresh: Boolean = false) {
-        getUserPage.invoke(refresh)
-            .subscribeOn(mySchedulers.io)
+    fun getViewState(
+        load: Observable<Unit>,
+        refresh: Observable<Unit>
+    ): Observable<ViewState> =
+        Observable.merge(
+            load.map { false },
+            refresh.map { true }
+        )
+            .toFlowable(BackpressureStrategy.DROP) //load/refresh should be finished before load/refresh again
+            .toObservable()
+            .flatMap {
+                getUserPage.invoke(
+                    refresh = it
+                ).subscribeOn(mySchedulers.io)
+            }
             .observeOn(mySchedulers.main)
-            .subscribe(
-                { userPageList ->
-                    val userList = userPageList.toUIItem()
-                    if (userList.isEmpty()) {
-                        viewState.onNext(
-                            ViewState.ShowNoData
-                        )
-                    } else {
-                        viewState.onNext(
-                            ViewState.ShowUserList(
-                                userList
-                            )
-                        )
-                    }
-                },
-                {
-                    viewState.onNext(
-                        ViewState.ShowErrorMessage(R.string.generic_error)
+            .map { userPageList ->
+                val userList = userPageList.toUIItem()
+                if (userList.isEmpty()) {
+                    ViewState.ShowNoData
+                } else {
+                    ViewState.ShowUserList(
+                        userList
                     )
                 }
-            ).addTo(disposable)
-    }
+            }
+            .onErrorResumeNext {
+                Observable.just(ViewState.ShowErrorMessage(R.string.generic_error))
+            }
 }

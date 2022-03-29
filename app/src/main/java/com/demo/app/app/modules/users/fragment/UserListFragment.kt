@@ -15,7 +15,9 @@ import com.demo.app.presenter.models.UIUserItem
 import com.eurosportdemo.app.databinding.FragmentUserListBinding
 import com.demo.app.presenter.viewModels.UserListViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.kotlin.addTo
+import io.reactivex.rxjava3.subjects.BehaviorSubject
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -27,9 +29,12 @@ class UserListFragment : BaseFragment(R.layout.fragment_user_list), UserAdapterD
     @Inject
     lateinit var adapter: UserListAdapter
 
+    private var refresh: BehaviorSubject<Unit> = BehaviorSubject.create()
+    private var load: BehaviorSubject<Unit> = BehaviorSubject.create()
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        viewModel.setup()
+
         adapter.delegate = this
         with(binding) {
             recyclerView.adapter = adapter
@@ -38,43 +43,47 @@ class UserListFragment : BaseFragment(R.layout.fragment_user_list), UserAdapterD
                 MarginItemDecoration(resources.getDimensionPixelSize(R.dimen.horizontal_margin))
             )
             swipe.setOnRefreshListener {
-                viewModel.refresh()
+                refresh.onNext(Unit)
             }
         }
-        viewModel
-            .viewState
-            .subscribe { state ->
-                when (state) {
-                    is UserListViewModel.ViewState.ShowUserList -> {
-                        with(binding) {
-                            swipe.isRefreshing = false
-                            viewSwitcher.displayedChild = 0
-                        }
-                        //toMutableList() is used to fix a bug with diffUtil https://stackoverflow.com/a/50031492/4557144
-                        adapter.submitList(state.userList.toMutableList())
+
+        viewModel.getViewState(
+            load = load.flatMap { Observable.just(Unit) },
+            refresh = refresh.flatMap { Observable.just(Unit) }
+        ).subscribe { state ->
+            when (state) {
+                is UserListViewModel.ViewState.ShowUserList -> {
+                    with(binding) {
+                        swipe.isRefreshing = false
+                        viewSwitcher.displayedChild = 0
                     }
-                    is UserListViewModel.ViewState.ShowErrorMessage -> {
-                        with(binding) {
-                            swipe.isRefreshing = false
-                            viewSwitcher.displayedChild = 0
-                        }
-                        Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                    //toMutableList() is used to fix a bug with diffUtil https://stackoverflow.com/a/50031492/4557144
+                    adapter.submitList(state.userList.toMutableList())
+                }
+                is UserListViewModel.ViewState.ShowErrorMessage -> {
+                    with(binding) {
+                        swipe.isRefreshing = false
+                        viewSwitcher.displayedChild = 0
                     }
-                    is UserListViewModel.ViewState.ShowNoData -> {
-                        with(binding) {
-                            swipe.isRefreshing = false
-                            viewSwitcher.displayedChild = 1
-                        }
+                    Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                }
+                is UserListViewModel.ViewState.ShowNoData -> {
+                    with(binding) {
+                        swipe.isRefreshing = false
+                        viewSwitcher.displayedChild = 1
                     }
                 }
-            }.addTo(disposable)
+            }
+        }.addTo(disposable)
+
+        load.onNext(Unit)
     }
 
     override fun didSelectUser(item: UIUserItem) {
-        viewModel.itemClicked(item)
+        //not implemented yet
     }
 
     override fun didDisplayProgress() {
-        viewModel.loadMore()
+        load.onNext(Unit)
     }
 }

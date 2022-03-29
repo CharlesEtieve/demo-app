@@ -10,20 +10,21 @@ class GetUserPageUseCase @Inject constructor(
 ) {
 
     private var page = 0
-    private var userList = ArrayList<DomainUserPage>()
+    private var userPageArrayList = ArrayList<DomainUserPage>()
 
-    fun invoke(refresh: Boolean = false): Observable<List<DomainUserPage>> =
+    fun invoke(
+        refresh: Boolean = false
+    ): Observable<List<DomainUserPage>> =
         Observable.defer {
             if(refresh) {
-                userList = ArrayList()
+                userPageArrayList = ArrayList()
                 page = 1
             } else {
                 page += 1
             }
-            userRepository
-                .getUserPage(page)
+            userRepository.getUserPage(page)
                 .map {
-                    userList.apply {
+                    userPageArrayList.apply {
                         add(it)
                     }
                 }.toObservable()
