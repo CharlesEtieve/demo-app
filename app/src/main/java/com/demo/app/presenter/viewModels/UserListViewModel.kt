@@ -25,11 +25,13 @@ class UserListViewModel @Inject constructor(
     }
 
     fun getViewState(
-        load: Observable<Unit>,
+        viewCreated: Observable<Unit>,
+        displayProgress: Observable<Unit>,
         refresh: Observable<Unit>
     ): Observable<ViewState> =
         Observable.merge(
-            load.map { false },
+            viewCreated.map { false },
+            displayProgress.map { false },
             refresh.map { true }
         )
             .toFlowable(BackpressureStrategy.DROP) //load/refresh should be finished before load/refresh again

@@ -7,16 +7,19 @@ import com.demo.app.app.modules.users.viewHolder.ProgressViewHolder
 import com.demo.app.app.modules.users.viewHolder.UserViewHolder
 import com.demo.app.app.ui.protocols.CellSelectionDelegate
 import com.demo.app.app.utils.BaseViewHolder
+import com.demo.app.presenter.models.UIUserItem
 import com.eurosportdemo.app.databinding.ViewHolderProgressBinding
 import com.eurosportdemo.app.databinding.ViewHolderUserBinding
-import com.demo.app.presenter.models.UIUserItem
+import io.reactivex.rxjava3.subjects.PublishSubject
 import javax.inject.Inject
+
 
 class UserListAdapter @Inject constructor(
     diffUtil: UIUserItemDiffUtil
 ) : ListAdapter<UIUserItem, BaseViewHolder<UIUserItem>>(diffUtil), CellSelectionDelegate {
 
-    var delegate: UserAdapterDelegate? = null
+    val userClickSubject: PublishSubject<Int> = PublishSubject.create()
+    val displayProgressSubject: PublishSubject<Unit> = PublishSubject.create()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BaseViewHolder<UIUserItem> {
         return when (viewType) {
@@ -53,14 +56,14 @@ class UserListAdapter @Inject constructor(
                 holder.onBind(model)
             }
             is ProgressViewHolder -> {
-                delegate?.didDisplayProgress()
+                displayProgressSubject.onNext(Unit)
             }
         }
     }
 
     override fun didSelectCellAt(index: Int) {
         val item = getItem(index)
-        delegate?.didSelectUser(item)
+        userClickSubject.onNext(index)
     }
 
     companion object {

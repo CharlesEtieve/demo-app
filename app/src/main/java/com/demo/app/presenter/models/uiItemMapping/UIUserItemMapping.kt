@@ -20,7 +20,7 @@ fun List<DomainUserPage>.toUIItem(): List<UIUserItem> =
                 }
             )
         }
-        if(last().canRefresh) {
+        if(isNotEmpty() && last().canRefresh) {
             it.add(UIUserItem.Progress)
         }
     }
